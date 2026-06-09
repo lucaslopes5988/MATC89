@@ -3,15 +3,10 @@ import 'package:commons/commons.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:injectable/injectable.dart';
 
-import 'data/datasource/firebase/events_firestore_data_source.dart';
+import 'datasource/firebase/events_firestore_data_source.dart';
+import 'mapper/event_mapper.dart';
 import '../../domain/model/event.dart';
 import '../../domain/repository/i_events_repository.dart';
-
-abstract class EventsFirestoreDataSource {
-  Future<dynamic> getUpcomingEvents({String? sportType});
-  Future<dynamic> getEventById(String eventId);
-  Future<dynamic> joinEvent({required String eventId, required String userId});
-}
 
 @Injectable(as: IEventsRepository)
 class EventsRepository implements IEventsRepository {
