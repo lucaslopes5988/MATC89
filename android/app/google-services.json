@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "696855005471",
+    "project_id": "playce-matc89-vinic",
+    "storage_bucket": "playce-matc89-vinic.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696855005471:android:be89d110376fdbc932082a",
+        "android_client_info": {
+          "package_name": "com.example.atividade_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REMOVED"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
