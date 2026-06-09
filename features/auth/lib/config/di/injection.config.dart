@@ -12,7 +12,6 @@
 import 'package:core/core.dart' as _i494;
 import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:get_it/get_it.dart' as _i174;
-import 'package:google_sign_in/google_sign_in.dart' as _i116;
 import 'package:injectable/injectable.dart' as _i526;
 
 import '../../data/auth_repository.dart' as _i841;
@@ -33,14 +32,8 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i59.FirebaseAuth>(
       () => authExternalModule.provideFirebaseAuth(),
     );
-    gh.lazySingleton<_i116.GoogleSignIn>(
-      () => authExternalModule.provideGoogleSignIn(),
-    );
     gh.factory<_i357.FirebaseAuthDataSource>(
-      () => _i357.FirebaseAuthDataSource(
-        gh<_i59.FirebaseAuth>(),
-        gh<_i116.GoogleSignIn>(),
-      ),
+      () => _i357.FirebaseAuthDataSource(gh<_i59.FirebaseAuth>()),
     );
     gh.factory<_i437.IAuthRepository>(
       () => _i841.AuthRepository(gh<_i357.FirebaseAuthDataSource>()),

@@ -3,6 +3,7 @@ import 'package:core/core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:injectable/injectable.dart';
 
+import 'package:auth/data/auth_debug_log.dart';
 import 'package:auth/data/datasource/firebase/firebase_auth_data_source.dart';
 import 'package:auth/domain/model/user.dart';
 import 'package:auth/domain/repository/i_auth_repository.dart';
@@ -19,10 +20,18 @@ class AuthRepository implements IAuthRepository {
       final user = await _dataSource.signInWithGoogle();
       return Result.ok(user);
     } on SignInCancelledException {
+      logAuthDebugMessage('signInWithGoogle cancelled by user');
       return Result.error(const OperationCancelledException());
-    } on FirebaseAuthException catch (error) {
+    } on FirebaseAuthException catch (error, stackTrace) {
+      logAuthDebug(
+        'signInWithGoogle FirebaseAuthException '
+        '(code=${error.code}, message=${error.message})',
+        error,
+        stackTrace,
+      );
       return Result.error(_mapFirebaseAuthError(error));
-    } catch (_) {
+    } catch (error, stackTrace) {
+      logAuthDebug('signInWithGoogle unexpected error', error, stackTrace);
       return Result.error(
         const FirebaseDataException('Erro ao entrar com Google'),
       );
@@ -34,7 +43,8 @@ class AuthRepository implements IAuthRepository {
     try {
       await _dataSource.signOut();
       return const Result.ok(null);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      logAuthDebug('signOut failed', error, stackTrace);
       return Result.error(const FirebaseDataException('Erro ao sair'));
     }
   }
@@ -43,7 +53,8 @@ class AuthRepository implements IAuthRepository {
   AsyncResult<User?> getCurrentUser() async {
     try {
       return Result.ok(_dataSource.getCurrentUser());
-    } catch (_) {
+    } catch (error, stackTrace) {
+      logAuthDebug('getCurrentUser failed', error, stackTrace);
       return Result.error(const FirebaseDataException('Erro ao obter usuário'));
     }
   }
