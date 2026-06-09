@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:auth/data/auth_debug_log.dart';
 import 'package:auth/domain/model/user.dart';
 
 @injectable
@@ -18,27 +19,43 @@ class FirebaseAuthDataSource {
   User? getCurrentUser() => _mapFirebaseUser(_firebaseAuth.currentUser);
 
   Future<User> signInWithGoogle() async {
-    if (kIsWeb) {
-      final provider = firebase_auth.GoogleAuthProvider();
-      final userCredential = await _firebaseAuth.signInWithPopup(provider);
+    try {
+      if (kIsWeb) {
+        logAuthDebugMessage('signInWithGoogle starting (web popup)');
+        final provider = firebase_auth.GoogleAuthProvider();
+        final userCredential = await _firebaseAuth.signInWithPopup(provider);
+        return _requireUser(userCredential.user);
+      }
+
+      logAuthDebugMessage('signInWithGoogle starting (native GoogleSignIn)');
+      final googleSignIn = GoogleSignIn();
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        throw const SignInCancelledException();
+      }
+
+      logAuthDebugMessage('Google account selected: ${googleUser.email}');
+      final googleAuth = await googleUser.authentication;
+      logAuthDebugMessage(
+        'Google tokens received '
+        '(accessToken=${googleAuth.accessToken != null}, '
+        'idToken=${googleAuth.idToken != null})',
+      );
+
+      final credential = firebase_auth.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
+
       return _requireUser(userCredential.user);
+    } catch (error, stackTrace) {
+      logAuthDebug('signInWithGoogle failed in data source', error, stackTrace);
+      rethrow;
     }
-
-    final googleSignIn = GoogleSignIn();
-    final googleUser = await googleSignIn.signIn();
-    if (googleUser == null) {
-      throw const SignInCancelledException();
-    }
-
-    final googleAuth = await googleUser.authentication;
-    final credential = firebase_auth.GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final userCredential = await _firebaseAuth.signInWithCredential(credential);
-
-    return _requireUser(userCredential.user);
   }
 
   Future<void> signOut() async {
