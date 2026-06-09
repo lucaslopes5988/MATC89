@@ -1,11 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:commons/commons.dart';
-import 'package:events/data/datasource/firebase/events_firestore_data_source.dart';
-import 'package:events/data/mapper/event_mapper.dart';
-import 'package:events/domain/model/event.dart';
-import 'package:events/domain/repository/i_events_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:injectable/injectable.dart';
+
+import 'data/datasource/firebase/events_firestore_data_source.dart';
+import '../../domain/model/event.dart';
+import '../../domain/repository/i_events_repository.dart';
+
+abstract class EventsFirestoreDataSource {
+  Future<dynamic> getUpcomingEvents({String? sportType});
+  Future<dynamic> getEventById(String eventId);
+  Future<dynamic> joinEvent({required String eventId, required String userId});
+}
 
 @Injectable(as: IEventsRepository)
 class EventsRepository implements IEventsRepository {
@@ -16,12 +22,8 @@ class EventsRepository implements IEventsRepository {
   @override
   AsyncResult<List<Event>> getUpcomingEvents({SportType? sportType}) async {
     try {
-      final records = await _dataSource.getUpcomingEvents(
-        sportType: sportType?.name,
-      );
-      final events = records
-          .map((record) => record.dto.toDomain(id: record.id))
-          .toList();
+      final records = await _dataSource.getUpcomingEvents(sportType: sportType?.name);
+      final events = records.map((record) => record.dto.toDomain(id: record.id)).toList();
       return Result.ok(events);
     } on FirebaseException catch (error) {
       return Result.error(_mapFirebaseError(error));
@@ -45,15 +47,9 @@ class EventsRepository implements IEventsRepository {
   }
 
   @override
-  AsyncResult<Event> joinEvent({
-    required String eventId,
-    required String userId,
-  }) async {
+  AsyncResult<Event> joinEvent({required String eventId, required String userId}) async {
     try {
-      final record = await _dataSource.joinEvent(
-        eventId: eventId,
-        userId: userId,
-      );
+      final record = await _dataSource.joinEvent(eventId: eventId, userId: userId);
       return Result.ok(record.dto.toDomain(id: record.id));
     } on StateError catch (error) {
       if (error.message == 'Event is full') {
