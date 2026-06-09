@@ -1,0 +1,26 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "playce-matc89-vinic",
+          "appId": "1:696855005471:android:be89d110376fdbc932082a",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "core/lib/firebase/firebase_options.dart": {
+          "projectId": "playce-matc89-vinic",
+          "configurations": {
+            "android": "1:696855005471:android:be89d110376fdbc932082a",
+            "web": "1:696855005471:web:1642dd1c2c5c426d32082a"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
