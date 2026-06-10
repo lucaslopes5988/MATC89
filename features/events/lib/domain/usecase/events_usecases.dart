@@ -25,3 +25,14 @@ class JoinEventUseCase {
     return _repository.joinEvent(eventId: eventId, userId: userId);
   }
 }
+
+@injectable
+class CreateEventUseCase {
+  const CreateEventUseCase(this._repository);
+
+  final IEventsRepository _repository;
+
+  AsyncResult<Event> invoke(Event event) {
+    return _repository.createEvent(event);
+  }
+}

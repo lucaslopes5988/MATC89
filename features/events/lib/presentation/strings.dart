@@ -11,6 +11,22 @@ abstract final class EventsStrings {
   static const slotsLeft = 'vagas';
   static const full = 'Lotado';
   static const join = 'Participar';
+  static const createTitle = 'Criar evento';
+  static const createTitleLabel = 'Titulo';
+  static const createSportLabel = 'Esporte';
+  static const createLocationLabel = 'Local';
+  static const createDateLabel = 'Data';
+  static const createTimeLabel = 'Horario';
+  static const createDescriptionLabel = 'Descricao';
+  static const createMaxParticipantsLabel = 'Limite de vagas';
+  static const createMaxParticipantsHint = 'Deixe vazio para sem limite';
+  static const createWomenOnlyLabel = 'Somente mulheres';
+  static const createSubmit = 'Publicar evento';
+  static const createSuccess = 'Evento criado';
+  static const createDateTimeRequired = 'Informe data e horario';
+  static const createFutureDateRequired = 'Informe um horario futuro';
+  static const requiredField = 'Campo obrigatorio';
+  static const invalidMaxParticipants = 'Informe um numero maior que zero';
   static const mapPlaceholderTitle = 'Mapa em breve';
   static const mapPlaceholderMessage =
       'A visualização no Google Maps entra na próxima iteração.';

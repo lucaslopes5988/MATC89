@@ -7,6 +7,8 @@ abstract interface class IEventsRepository {
 
   AsyncResult<Event> getEventById(String eventId);
 
+  AsyncResult<Event> createEvent(Event event);
+
   AsyncResult<Event> joinEvent({
     required String eventId,
     required String userId,
