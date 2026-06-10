@@ -17,13 +17,19 @@ class EventsRepository implements IEventsRepository {
   @override
   AsyncResult<List<Event>> getUpcomingEvents({SportType? sportType}) async {
     try {
-      final records = await _dataSource.getUpcomingEvents(sportType: sportType?.name);
-      final events = records.map((record) => record.dto.toDomain(id: record.id)).toList();
+      final records = await _dataSource.getUpcomingEvents(
+        sportType: sportType?.name,
+      );
+      final events = records
+          .map((record) => record.dto.toDomain(id: record.id))
+          .toList();
       return Result.ok(events);
     } on FirebaseException catch (error) {
       return Result.error(_mapFirebaseError(error));
     } catch (_) {
-      return Result.error(const FirebaseDataException('Erro ao carregar eventos'));
+      return Result.error(
+        const FirebaseDataException('Erro ao carregar eventos'),
+      );
     }
   }
 
@@ -37,14 +43,34 @@ class EventsRepository implements IEventsRepository {
     } on FirebaseException catch (error) {
       return Result.error(_mapFirebaseError(error));
     } catch (_) {
-      return Result.error(const FirebaseDataException('Erro ao carregar evento'));
+      return Result.error(
+        const FirebaseDataException('Erro ao carregar evento'),
+      );
     }
   }
 
   @override
-  AsyncResult<Event> joinEvent({required String eventId, required String userId}) async {
+  AsyncResult<Event> createEvent(Event event) async {
     try {
-      final record = await _dataSource.joinEvent(eventId: eventId, userId: userId);
+      final record = await _dataSource.createEvent(event.toDbDto());
+      return Result.ok(record.dto.toDomain(id: record.id));
+    } on FirebaseException catch (error) {
+      return Result.error(_mapFirebaseError(error));
+    } catch (_) {
+      return Result.error(const FirebaseDataException('Erro ao criar evento'));
+    }
+  }
+
+  @override
+  AsyncResult<Event> joinEvent({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final record = await _dataSource.joinEvent(
+        eventId: eventId,
+        userId: userId,
+      );
       return Result.ok(record.dto.toDomain(id: record.id));
     } on StateError catch (error) {
       if (error.message == 'Event is full') {
@@ -54,7 +80,9 @@ class EventsRepository implements IEventsRepository {
     } on FirebaseException catch (error) {
       return Result.error(_mapFirebaseError(error));
     } catch (_) {
-      return Result.error(const FirebaseDataException('Erro ao entrar no evento'));
+      return Result.error(
+        const FirebaseDataException('Erro ao entrar no evento'),
+      );
     }
   }
 }
