@@ -98,7 +98,7 @@ class PlayceTheme {
         style: FilledButton.styleFrom(
           backgroundColor: PlayceColors.primary,
           foregroundColor: PlayceColors.onPrimary,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(88, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(PlayceRadius.full),
           ),

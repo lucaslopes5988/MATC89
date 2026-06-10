@@ -76,36 +76,45 @@ class _ExploreView extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 44,
-                    child: ListView.separated(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(
                         horizontal: PlayceSpacing.md,
                       ),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _filters.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(width: PlayceSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final sport = _filters[index];
-                        final selected =
-                            state is ExploreLoadedState &&
-                            state.selectedSport == sport;
-
-                        return FilterChip(
-                          label: Text(sportTypeLabel(sport)),
-                          selected: selected,
-                          onSelected: (_) =>
-                              context.read<ExploreCubit>().filterBySport(sport),
-                        );
-                      },
+                      child: Row(
+                        children: [
+                          for (int i = 0; i < _filters.length; i++) ...[
+                            if (i > 0)
+                              const SizedBox(width: PlayceSpacing.sm),
+                            Builder(
+                              builder: (context) {
+                                final sport = _filters[i];
+                                final selected =
+                                    state is ExploreLoadedState &&
+                                    state.selectedSport == sport;
+                                return FilterChip(
+                                  label: Text(sportTypeLabel(sport)),
+                                  selected: selected,
+                                  onSelected: (_) => context
+                                      .read<ExploreCubit>()
+                                      .filterBySport(sport),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 switch (state) {
                   ExploreLoadingState() ||
                   ExploreInitialState() => const SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   ExploreErrorState(:final message) => SliverFillRemaining(
+                    hasScrollBody: false,
                     child: PlayceEmptyState(
                       title: 'Ops!',
                       message: message,
@@ -114,6 +123,7 @@ class _ExploreView extends StatelessWidget {
                   ),
                   ExploreLoadedState(:final events) when events.isEmpty =>
                     const SliverFillRemaining(
+                      hasScrollBody: false,
                       child: PlayceEmptyState(
                         title: EventsStrings.emptyTitle,
                         message: EventsStrings.emptyMessage,
@@ -159,12 +169,7 @@ class _EventCard extends StatelessWidget {
               spacing: PlayceSpacing.sm,
               runSpacing: PlayceSpacing.xs,
               children: [
-                Chip(
-                  label: Text(
-                    sportTypeLabel(event.sportType),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                Chip(label: Text(sportTypeLabel(event.sportType))),
                 if (event.womenOnly)
                   Chip(
                     avatar: const Icon(Icons.female, size: 16),
@@ -211,9 +216,7 @@ class _EventCard extends StatelessWidget {
                         : '$slots ${EventsStrings.slotsLeft}',
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: event.isFull
-                          ? PlayceColors.error
-                          : PlayceColors.tertiary,
+                      color: event.isFull ? PlayceColors.error : PlayceColors.tertiary,
                     ),
                   ),
                 ),
