@@ -95,11 +95,12 @@ class MainShellPage extends StatefulWidget {
 
 class _MainShellPageState extends State<MainShellPage> {
   int _currentIndex = 0;
+  int _exploreRefreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const ExplorePage(),
+      ExplorePage(key: ValueKey(_exploreRefreshKey)),
       const _PlaceholderTab(
         title: EventsStrings.mapPlaceholderTitle,
         message: EventsStrings.mapPlaceholderMessage,
@@ -111,7 +112,7 @@ class _MainShellPageState extends State<MainShellPage> {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: pages),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: _openCreateEvent,
         icon: const Icon(Icons.add),
         label: const Text('Criar'),
       ),
@@ -139,6 +140,25 @@ class _MainShellPageState extends State<MainShellPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _openCreateEvent() async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CreateEventPage(
+          userId: widget.user.id,
+          userEmail: widget.user.email,
+          userDisplayName: widget.user.displayName,
+        ),
+      ),
+    );
+
+    if (created == true && mounted) {
+      setState(() {
+        _currentIndex = 0;
+        _exploreRefreshKey++;
+      });
+    }
   }
 }
 
