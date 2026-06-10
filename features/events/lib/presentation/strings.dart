@@ -11,6 +11,20 @@ abstract final class EventsStrings {
   static const slotsLeft = 'vagas';
   static const full = 'Lotado';
   static const join = 'Participar';
+  static const leave = 'Cancelar presenca';
+  static const joinSuccess = 'Presenca confirmada';
+  static const leaveSuccess = 'Presenca cancelada';
+  static const detailsTitle = 'Detalhes do evento';
+  static const detailsButton = 'Detalhes';
+  static const detailsDate = 'Data e horario';
+  static const detailsLocation = 'Local';
+  static const detailsHost = 'Criador';
+  static const detailsParticipants = 'Participantes';
+  static const detailsAlreadyJoined = 'Voce ja confirmou presenca.';
+  static const detailsHostJoined =
+      'Voce criou este evento e ja esta confirmado.';
+  static const detailsFull = 'Evento lotado.';
+  static const hostCannotLeave = 'Criador confirmado';
   static const createTitle = 'Criar evento';
   static const createTitleLabel = 'Titulo';
   static const createSportLabel = 'Esporte';

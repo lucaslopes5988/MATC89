@@ -16,6 +16,17 @@ class GetUpcomingEventsUseCase {
 }
 
 @injectable
+class GetEventByIdUseCase {
+  const GetEventByIdUseCase(this._repository);
+
+  final IEventsRepository _repository;
+
+  AsyncResult<Event> invoke(String eventId) {
+    return _repository.getEventById(eventId);
+  }
+}
+
+@injectable
 class JoinEventUseCase {
   const JoinEventUseCase(this._repository);
 
@@ -23,6 +34,17 @@ class JoinEventUseCase {
 
   AsyncResult<Event> invoke({required String eventId, required String userId}) {
     return _repository.joinEvent(eventId: eventId, userId: userId);
+  }
+}
+
+@injectable
+class LeaveEventUseCase {
+  const LeaveEventUseCase(this._repository);
+
+  final IEventsRepository _repository;
+
+  AsyncResult<Event> invoke({required String eventId, required String userId}) {
+    return _repository.leaveEvent(eventId: eventId, userId: userId);
   }
 }
 

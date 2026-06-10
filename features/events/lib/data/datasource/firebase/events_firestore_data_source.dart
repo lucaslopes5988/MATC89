@@ -90,4 +90,52 @@ class EventsFirestoreDataSource {
       );
     });
   }
+
+  Future<({EventDbDto dto, String id})> leaveEvent({
+    required String eventId,
+    required String userId,
+  }) async {
+    final docRef = _collection.doc(eventId);
+
+    return _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw StateError('Event not found');
+      }
+
+      final dto = EventDbDto.fromFirestore(snapshot.data()!);
+      if (!dto.participantIds.contains(userId)) {
+        return (dto: dto, id: snapshot.id);
+      }
+
+      if (dto.hostId == userId) {
+        throw StateError('Host cannot leave');
+      }
+
+      final updatedParticipants = dto.participantIds
+          .where((participantId) => participantId != userId)
+          .toList();
+      transaction.update(docRef, {'participantIds': updatedParticipants});
+
+      return (
+        dto: EventDbDto(
+          title: dto.title,
+          description: dto.description,
+          sportType: dto.sportType,
+          startAt: dto.startAt,
+          endAt: dto.endAt,
+          locationName: dto.locationName,
+          latitude: dto.latitude,
+          longitude: dto.longitude,
+          hostId: dto.hostId,
+          hostName: dto.hostName,
+          maxParticipants: dto.maxParticipants,
+          participantIds: updatedParticipants,
+          womenOnly: dto.womenOnly,
+          tags: dto.tags,
+        ),
+        id: snapshot.id,
+      );
+    });
+  }
 }

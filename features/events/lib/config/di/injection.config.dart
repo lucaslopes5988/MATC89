@@ -18,7 +18,8 @@ import '../../data/datasource/firebase/events_firestore_data_source.dart'
 import '../../data/events_repository.dart' as _i405;
 import '../../domain/repository/i_events_repository.dart' as _i616;
 import '../../domain/usecase/events_usecases.dart' as _i74;
-import '../../presentation/create/bloc/create_event_cubit.dart' as _i277;
+import '../../presentation/create/bloc/create_event_cubit.dart' as _i707;
+import '../../presentation/details/bloc/event_details_cubit.dart' as _i607;
 import '../../presentation/explore/bloc/explore_cubit.dart' as _i858;
 import 'events_external_module.dart' as _i923;
 
@@ -42,17 +43,30 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i74.GetUpcomingEventsUseCase>(
       () => _i74.GetUpcomingEventsUseCase(gh<_i616.IEventsRepository>()),
     );
+    gh.factory<_i74.GetEventByIdUseCase>(
+      () => _i74.GetEventByIdUseCase(gh<_i616.IEventsRepository>()),
+    );
     gh.factory<_i74.JoinEventUseCase>(
       () => _i74.JoinEventUseCase(gh<_i616.IEventsRepository>()),
+    );
+    gh.factory<_i74.LeaveEventUseCase>(
+      () => _i74.LeaveEventUseCase(gh<_i616.IEventsRepository>()),
     );
     gh.factory<_i74.CreateEventUseCase>(
       () => _i74.CreateEventUseCase(gh<_i616.IEventsRepository>()),
     );
-    gh.factory<_i277.CreateEventCubit>(
-      () => _i277.CreateEventCubit(gh<_i74.CreateEventUseCase>()),
-    );
     gh.factory<_i858.ExploreCubit>(
       () => _i858.ExploreCubit(gh<_i74.GetUpcomingEventsUseCase>()),
+    );
+    gh.factory<_i607.EventDetailsCubit>(
+      () => _i607.EventDetailsCubit(
+        gh<_i74.GetEventByIdUseCase>(),
+        gh<_i74.JoinEventUseCase>(),
+        gh<_i74.LeaveEventUseCase>(),
+      ),
+    );
+    gh.factory<_i707.CreateEventCubit>(
+      () => _i707.CreateEventCubit(gh<_i74.CreateEventUseCase>()),
     );
     return this;
   }
