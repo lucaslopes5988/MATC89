@@ -2,7 +2,6 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:intl/intl.dart';
 
 import 'package:events/domain/model/event.dart';
 import 'package:events/presentation/explore/bloc/explore_cubit.dart';
@@ -77,36 +76,45 @@ class _ExploreView extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 44,
-                    child: ListView.separated(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(
                         horizontal: PlayceSpacing.md,
                       ),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _filters.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(width: PlayceSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final sport = _filters[index];
-                        final selected =
-                            state is ExploreLoadedState &&
-                            state.selectedSport == sport;
-
-                        return FilterChip(
-                          label: Text(sportTypeLabel(sport)),
-                          selected: selected,
-                          onSelected: (_) =>
-                              context.read<ExploreCubit>().filterBySport(sport),
-                        );
-                      },
+                      child: Row(
+                        children: [
+                          for (int i = 0; i < _filters.length; i++) ...[
+                            if (i > 0)
+                              const SizedBox(width: PlayceSpacing.sm),
+                            Builder(
+                              builder: (context) {
+                                final sport = _filters[i];
+                                final selected =
+                                    state is ExploreLoadedState &&
+                                    state.selectedSport == sport;
+                                return FilterChip(
+                                  label: Text(sportTypeLabel(sport)),
+                                  selected: selected,
+                                  onSelected: (_) => context
+                                      .read<ExploreCubit>()
+                                      .filterBySport(sport),
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 switch (state) {
                   ExploreLoadingState() ||
                   ExploreInitialState() => const SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   ExploreErrorState(:final message) => SliverFillRemaining(
+                    hasScrollBody: false,
                     child: PlayceEmptyState(
                       title: 'Ops!',
                       message: message,
@@ -115,6 +123,7 @@ class _ExploreView extends StatelessWidget {
                   ),
                   ExploreLoadedState(:final events) when events.isEmpty =>
                     const SliverFillRemaining(
+                      hasScrollBody: false,
                       child: PlayceEmptyState(
                         title: EventsStrings.emptyTitle,
                         message: EventsStrings.emptyMessage,
@@ -148,7 +157,6 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMM • HH:mm', 'pt_BR');
     final slots = event.slotsLeft;
 
     return Card(
@@ -157,16 +165,16 @@ class _EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              spacing: PlayceSpacing.sm,
+              runSpacing: PlayceSpacing.xs,
               children: [
                 Chip(label: Text(sportTypeLabel(event.sportType))),
-                if (event.womenOnly) ...[
-                  const SizedBox(width: PlayceSpacing.sm),
+                if (event.womenOnly)
                   Chip(
                     avatar: const Icon(Icons.female, size: 16),
                     label: const Text(EventsStrings.womenOnlyBadge),
                   ),
-                ],
               ],
             ),
             const SizedBox(height: PlayceSpacing.sm),
@@ -185,7 +193,7 @@ class _EventCard extends StatelessWidget {
               children: [
                 const Icon(Icons.calendar_today, size: 16),
                 const SizedBox(width: PlayceSpacing.xs),
-                Text(dateFormat.format(event.startAt)),
+                Text(_formatEventDate(event.startAt)),
               ],
             ),
             const SizedBox(height: PlayceSpacing.xs),
@@ -199,19 +207,20 @@ class _EventCard extends StatelessWidget {
             const SizedBox(height: PlayceSpacing.md),
             Row(
               children: [
-                Text(
-                  event.isFull
-                      ? EventsStrings.full
-                      : slots == null
-                      ? '${event.participantCount} inscritos'
-                      : '$slots ${EventsStrings.slotsLeft}',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: event.isFull
-                        ? PlayceColors.error
-                        : PlayceColors.tertiary,
+                Expanded(
+                  child: Text(
+                    event.isFull
+                        ? EventsStrings.full
+                        : slots == null
+                        ? '${event.participantCount} inscritos'
+                        : '$slots ${EventsStrings.slotsLeft}',
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: event.isFull ? PlayceColors.error : PlayceColors.tertiary,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: PlayceSpacing.md),
                 FilledButton(
                   onPressed: event.isFull ? null : () {},
                   child: const Text(EventsStrings.join),
@@ -222,5 +231,13 @@ class _EventCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatEventDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month $hour:$minute';
   }
 }

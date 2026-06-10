@@ -39,6 +39,11 @@ class EventsFirestoreDataSource {
     return (dto: EventDbDto.fromFirestore(doc.data()!), id: doc.id);
   }
 
+  Future<({EventDbDto dto, String id})> createEvent(EventDbDto dto) async {
+    final docRef = await _collection.add(dto.toFirestore());
+    return (dto: dto, id: docRef.id);
+  }
+
   Future<({EventDbDto dto, String id})> joinEvent({
     required String eventId,
     required String userId,
