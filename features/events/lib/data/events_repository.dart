@@ -85,6 +85,35 @@ class EventsRepository implements IEventsRepository {
       );
     }
   }
+
+  @override
+  AsyncResult<Event> leaveEvent({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final record = await _dataSource.leaveEvent(
+        eventId: eventId,
+        userId: userId,
+      );
+      return Result.ok(record.dto.toDomain(id: record.id));
+    } on StateError catch (error) {
+      if (error.message == 'Host cannot leave') {
+        return Result.error(
+          const FirebaseDataException(
+            'O criador nao pode cancelar presenca nesta versao',
+          ),
+        );
+      }
+      return Result.error(const NotFoundException('Evento nao encontrado'));
+    } on FirebaseException catch (error) {
+      return Result.error(_mapFirebaseError(error));
+    } catch (_) {
+      return Result.error(
+        const FirebaseDataException('Erro ao cancelar presenca'),
+      );
+    }
+  }
 }
 
 Exception _mapFirebaseError(FirebaseException error) {

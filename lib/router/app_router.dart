@@ -100,7 +100,7 @@ class _MainShellPageState extends State<MainShellPage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      ExplorePage(key: ValueKey(_exploreRefreshKey)),
+      ExplorePage(key: ValueKey(_exploreRefreshKey), userId: widget.user.id),
       const _PlaceholderTab(
         title: EventsStrings.mapPlaceholderTitle,
         message: EventsStrings.mapPlaceholderMessage,

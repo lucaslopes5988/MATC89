@@ -13,4 +13,9 @@ abstract interface class IEventsRepository {
     required String eventId,
     required String userId,
   });
+
+  AsyncResult<Event> leaveEvent({
+    required String eventId,
+    required String userId,
+  });
 }
