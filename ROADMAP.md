@@ -1,5 +1,87 @@
 ---
 
+## Atualizacao do MVP - 02/07/2026
+
+### Implementado nesta rodada
+
+**Mapa na navegacao principal**
+
+- A aba Mapa deixou de ser placeholder e passou a exibir eventos geolocalizados como marcadores.
+- Eventos sem coordenadas continuam acessiveis pela aba Explorar, mas nao aparecem no mapa.
+- Ao tocar em um marcador, o app abre o fluxo de detalhes do evento.
+- A aba Mapa reaproveita os filtros ja existentes por esporte e a regra de visibilidade para eventos "Somente mulheres".
+
+**Criacao de eventos com endereco assistido**
+
+- O campo de local na criacao de evento agora possui autocomplete enquanto o usuario digita.
+- A selecao de uma sugestao preenche o texto do endereco e move o mapa para as coordenadas correspondentes.
+- No Web, a busca usa Google Maps Places API (New), evitando a API legada `AutocompleteService`.
+- No Android/iOS, a busca continua usando o pacote `geocoding` como fallback nativo.
+- O script do Google Maps no Web passou a carregar `libraries=places`, `v=weekly` e `loading=async`.
+
+**Agenda do usuario**
+
+- Criada a aba "Agenda" na navegacao principal.
+- A agenda lista eventos futuros em que o usuario autenticado confirmou presenca.
+- Eventos criados pelo proprio usuario tambem aparecem, porque o criador e confirmado automaticamente em `participantIds`.
+- Ao tocar em um evento da agenda, o app abre a tela de detalhes.
+- Quando o usuario cancela presenca nos detalhes e volta, a agenda e recarregada.
+- A consulta usa `participantIds` com `arrayContains` no Firestore e filtra eventos futuros.
+
+**Configuracao externa necessaria**
+
+- A chave do Google Maps usada no Web precisa ter estas APIs habilitadas no Google Cloud:
+  - Maps JavaScript API.
+  - Places API (New).
+- A chave atual e de demonstracao. Para entrega ou uso continuo, o ideal e substituir por uma chave do projeto oficial com restricoes por dominio/app.
+
+### Validacao executada
+
+- `flutter analyze`: passou.
+- `flutter test`: passou.
+- `flutter build web --debug`: passou.
+- Servidor local reiniciado em `http://localhost:5175`.
+
+### Estado atual do MVP
+
+O ciclo central do app esta funcionando em nivel MVP:
+
+1. Usuario faz login.
+2. Usuario cria evento com esporte, data, horario, descricao, local textual e ponto no mapa.
+3. Evento aparece em Explorar.
+4. Evento aparece no Mapa quando possui coordenadas.
+5. Usuario abre detalhes do evento.
+6. Usuario confirma ou cancela presenca.
+7. Usuario ve seus proximos eventos confirmados na Agenda.
+
+### Proximo passo recomendado
+
+Evoluir a **Agenda** para separar eventos confirmados e eventos criados pelo usuario, porque a primeira versao ja lista todos os eventos confirmados.
+
+Escopo sugerido:
+
+- Adicionar uma secao ou aba interna "Vou participar".
+- Adicionar uma secao ou aba interna "Criados por mim".
+- Separar eventos futuros e passados.
+- Permitir cancelar evento criado pelo organizador.
+- Preparar edicao de evento criado.
+
+Por que este e o melhor proximo passo:
+
+- A Agenda atual resolve o basico, mas ainda mistura participacao e organizacao.
+- Organizadores precisam ter controle sobre os eventos que criaram.
+- Essa etapa prepara edicao/cancelamento sem precisar mexer em mapa ou autocomplete.
+
+### Depois da Agenda
+
+Ordem sugerida apos essa etapa:
+
+1. Filtros basicos por data no Explorar e Mapa.
+2. Edicao e cancelamento de evento pelo criador.
+3. Compartilhamento de evento por link/texto.
+4. Lista simples de participantes, buscando dados basicos de perfil.
+5. Denuncia de evento, por seguranca minima do produto.
+
 ## Registro de Iterações
 
 ### Iteração 1 — Mapa e Autoidentificação (02/07/2026)

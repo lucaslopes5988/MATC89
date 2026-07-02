@@ -44,6 +44,12 @@ abstract final class EventsStrings {
   static const womenOnlyRestricted = 'Este evento é exclusivo para mulheres';
   static const mapEmptyMessage =
       'Nenhum evento com localizacao para mostrar no mapa.';
+  static const myEventsTitle = 'Minha agenda';
+  static const myEventsSubtitle = 'Eventos em que você confirmou presença';
+  static const myEventsEmptyTitle = 'Nenhum evento confirmado';
+  static const myEventsEmptyMessage =
+      'Quando você confirmar presença, seus próximos eventos aparecem aqui.';
+  static const myEventsHostBadge = 'Criado por você';
   static const locationPickerLabel = 'Localização no mapa';
   static const locationPickerUseMyLocation = 'Usar minha localização';
   static const locationPickerHint = 'Toque no mapa para marcar o local';

@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:get_it/get_it.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:events/domain/model/event.dart';
+import 'package:events/presentation/create/address_search/address_search_result.dart';
+import 'package:events/presentation/create/address_search/address_search_service.dart';
 import 'package:events/presentation/create/bloc/create_event_cubit.dart';
 import 'package:events/presentation/create/bloc/create_event_state.dart';
 import 'package:events/presentation/create/widget/location_picker_field.dart';
@@ -57,6 +60,7 @@ class _CreateEventViewState extends State<_CreateEventView> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _maxParticipantsController = TextEditingController();
+  final _addressSearchService = AddressSearchService();
 
   SportType _sportType = SportType.running;
   DateTime? _selectedDate;
@@ -64,9 +68,13 @@ class _CreateEventViewState extends State<_CreateEventView> {
   bool _womenOnly = false;
   LatLng? _selectedLocation;
   bool _isSearchingLocation = false;
+  List<AddressSearchResult> _locationSuggestions = const [];
+  Timer? _locationSearchDebounce;
+  int _locationSearchRequestId = 0;
 
   @override
   void dispose() {
+    _locationSearchDebounce?.cancel();
     _titleController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
@@ -144,7 +152,9 @@ class _CreateEventViewState extends State<_CreateEventView> {
                               child: SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             )
                           : IconButton(
@@ -155,8 +165,16 @@ class _CreateEventViewState extends State<_CreateEventView> {
                     ),
                     textInputAction: TextInputAction.search,
                     onFieldSubmitted: (_) => _searchLocation(),
+                    onChanged: _onLocationChanged,
                     validator: _requiredValidator,
                   ),
+                  if (_locationSuggestions.isNotEmpty) ...[
+                    const SizedBox(height: PlayceSpacing.xs),
+                    _LocationSuggestionsList(
+                      suggestions: _locationSuggestions,
+                      onSelected: _selectLocationSuggestion,
+                    ),
+                  ],
                   const SizedBox(height: PlayceSpacing.md),
                   LocationPickerField(
                     initialLocation: _selectedLocation,
@@ -251,43 +269,33 @@ class _CreateEventViewState extends State<_CreateEventView> {
       return;
     }
 
+    _locationSearchDebounce?.cancel();
     setState(() => _isSearchingLocation = true);
 
     try {
-      final locations = await geocoding.locationFromAddress(query);
+      final results = await _addressSearchService.search(query);
 
       if (!mounted) return;
 
-      if (locations.isEmpty) {
+      if (results.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text(EventsStrings.locationNotFound)),
         );
         return;
       }
 
-      if (locations.length == 1) {
-        _applyGeocodingResult(locations.first);
+      if (results.length == 1) {
+        _applyAddressSearchResult(results.first);
         return;
       }
 
-      final placemarks = await Future.wait(
-        locations.take(5).map(
-          (loc) => geocoding
-              .placemarkFromCoordinates(loc.latitude, loc.longitude)
-              .then((p) => (location: loc, placemark: p.firstOrNull))
-              .catchError((_) => (location: loc, placemark: null as geocoding.Placemark?)),
-        ),
-      );
-
-      if (!mounted) return;
-
-      final selected = await showModalBottomSheet<geocoding.Location>(
+      final selected = await showModalBottomSheet<AddressSearchResult>(
         context: context,
-        builder: (context) => _LocationResultsSheet(results: placemarks),
+        builder: (context) => _LocationResultsSheet(results: results),
       );
 
       if (selected != null && mounted) {
-        _applyGeocodingResult(selected);
+        _applyAddressSearchResult(selected);
       }
     } catch (_) {
       if (mounted) {
@@ -300,12 +308,58 @@ class _CreateEventViewState extends State<_CreateEventView> {
     }
   }
 
-  void _applyGeocodingResult(geocoding.Location location) {
-    final latLng = LatLng(location.latitude, location.longitude);
-    setState(() => _selectedLocation = latLng);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(EventsStrings.locationFound)),
-    );
+  void _onLocationChanged(String value) {
+    _locationSearchDebounce?.cancel();
+
+    final query = value.trim();
+    if (query.length < 3) {
+      setState(() => _locationSuggestions = const []);
+      return;
+    }
+
+    _locationSearchDebounce = Timer(const Duration(milliseconds: 450), () {
+      _loadLocationSuggestions(query);
+    });
+  }
+
+  Future<void> _loadLocationSuggestions(String query) async {
+    final requestId = ++_locationSearchRequestId;
+    setState(() => _isSearchingLocation = true);
+
+    try {
+      final results = await _addressSearchService.search(query);
+
+      if (!mounted || requestId != _locationSearchRequestId) return;
+
+      setState(() => _locationSuggestions = results);
+    } catch (_) {
+      if (!mounted || requestId != _locationSearchRequestId) return;
+      setState(() => _locationSuggestions = const []);
+    } finally {
+      if (mounted && requestId == _locationSearchRequestId) {
+        setState(() => _isSearchingLocation = false);
+      }
+    }
+  }
+
+  void _selectLocationSuggestion(AddressSearchResult result) {
+    _locationSearchDebounce?.cancel();
+    _applyAddressSearchResult(result);
+  }
+
+  void _applyAddressSearchResult(AddressSearchResult result) {
+    final latLng = LatLng(result.latitude, result.longitude);
+    setState(() {
+      _locationController.text = result.displayText;
+      _locationController.selection = TextSelection.collapsed(
+        offset: _locationController.text.length,
+      );
+      _selectedLocation = latLng;
+      _locationSuggestions = const [];
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text(EventsStrings.locationFound)));
   }
 
   void _submit() {
@@ -448,8 +502,7 @@ class _DateTimeFields extends StatelessWidget {
 class _LocationResultsSheet extends StatelessWidget {
   const _LocationResultsSheet({required this.results});
 
-  final List<({geocoding.Location location, geocoding.Placemark? placemark})>
-      results;
+  final List<AddressSearchResult> results;
 
   @override
   Widget build(BuildContext context) {
@@ -467,9 +520,9 @@ class _LocationResultsSheet extends StatelessWidget {
             ),
             child: Text(
               'Selecione o local',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const Divider(height: 1),
@@ -480,16 +533,20 @@ class _LocationResultsSheet extends StatelessWidget {
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final result = results[index];
-                final title = _formatPlacemark(result.placemark);
-                final subtitle =
-                    '${result.location.latitude.toStringAsFixed(5)}, '
-                    '${result.location.longitude.toStringAsFixed(5)}';
 
                 return ListTile(
                   leading: const Icon(Icons.location_on_outlined),
-                  title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(subtitle),
-                  onTap: () => Navigator.pop(context, result.location),
+                  title: Text(
+                    result.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    result.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onTap: () => Navigator.pop(context, result),
                 );
               },
             ),
@@ -498,18 +555,49 @@ class _LocationResultsSheet extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatPlacemark(geocoding.Placemark? placemark) {
-    if (placemark == null) return 'Local encontrado';
+class _LocationSuggestionsList extends StatelessWidget {
+  const _LocationSuggestionsList({
+    required this.suggestions,
+    required this.onSelected,
+  });
 
-    final parts = <String>[
-      if (placemark.street?.isNotEmpty == true) placemark.street!,
-      if (placemark.subLocality?.isNotEmpty == true) placemark.subLocality!,
-      if (placemark.locality?.isNotEmpty == true) placemark.locality!,
-      if (placemark.administrativeArea?.isNotEmpty == true)
-        placemark.administrativeArea!,
-    ];
+  final List<AddressSearchResult> suggestions;
+  final ValueChanged<AddressSearchResult> onSelected;
 
-    return parts.isEmpty ? 'Local encontrado' : parts.join(', ');
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 1,
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: suggestions.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final suggestion = suggestions[index];
+
+          return ListTile(
+            dense: true,
+            leading: const Icon(Icons.place_outlined),
+            title: Text(
+              suggestion.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              suggestion.subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: () => onSelected(suggestion),
+          );
+        },
+      ),
+    );
   }
 }

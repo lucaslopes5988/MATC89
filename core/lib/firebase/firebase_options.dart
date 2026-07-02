@@ -25,7 +25,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REMOVED',
+    apiKey: 'AIzaSyCr2GK2B2N6HfcEfkVqqi3mgGaGAq8SYQQ',
     appId: '1:696855005471:web:1642dd1c2c5c426d32082a',
     messagingSenderId: '696855005471',
     projectId: 'playce-matc89-vinic',
@@ -35,7 +35,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REMOVED',
+    apiKey: 'AIzaSyCr2GK2B2N6HfcEfkVqqi3mgGaGAq8SYQQ',
     appId: '1:696855005471:android:be89d110376fdbc932082a',
     messagingSenderId: '696855005471',
     projectId: 'playce-matc89-vinic',

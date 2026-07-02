@@ -98,6 +98,7 @@ class MainShellPage extends StatefulWidget {
 class _MainShellPageState extends State<MainShellPage> {
   int _currentIndex = 0;
   int _exploreRefreshKey = 0;
+  int _myEventsRefreshKey = 0;
   late final ProfileCubit _profileCubit;
 
   @override
@@ -124,28 +125,31 @@ class _MainShellPageState extends State<MainShellPage> {
             _ => false,
           };
 
-          final pages = [
-            ExplorePage(
-              key: ValueKey(_exploreRefreshKey),
-              userId: widget.user.id,
-              isWoman: isWoman,
-            ),
-            MapEventsPage(
-              key: ValueKey('map-$_exploreRefreshKey'),
-              userId: widget.user.id,
-              isWoman: isWoman,
-            ),
-            ProfilePage(
-              userId: widget.user.id,
-              email: widget.user.email,
-              displayName: widget.user.displayName,
-              photoUrl: widget.user.photoUrl,
-              onSignOut: () => GetIt.I.get<SignOutUseCase>().invoke(),
-            ),
-          ];
-
           return Scaffold(
-            body: IndexedStack(index: _currentIndex, children: pages),
+            body: switch (_currentIndex) {
+              0 => ExplorePage(
+                key: ValueKey(_exploreRefreshKey),
+                userId: widget.user.id,
+                isWoman: isWoman,
+              ),
+              1 => MapEventsPage(
+                key: ValueKey('map-$_exploreRefreshKey'),
+                userId: widget.user.id,
+                isWoman: isWoman,
+              ),
+              2 => MyEventsPage(
+                key: ValueKey(_myEventsRefreshKey),
+                userId: widget.user.id,
+                isWoman: isWoman,
+              ),
+              _ => ProfilePage(
+                userId: widget.user.id,
+                email: widget.user.email,
+                displayName: widget.user.displayName,
+                photoUrl: widget.user.photoUrl,
+                onSignOut: () => GetIt.I.get<SignOutUseCase>().invoke(),
+              ),
+            },
             floatingActionButton: FloatingActionButton.extended(
               onPressed: _openCreateEvent,
               icon: const Icon(Icons.add),
@@ -166,6 +170,11 @@ class _MainShellPageState extends State<MainShellPage> {
                   icon: Icon(Icons.map_outlined),
                   selectedIcon: Icon(Icons.map),
                   label: 'Mapa',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.event_available_outlined),
+                  selectedIcon: Icon(Icons.event_available),
+                  label: 'Agenda',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.person_outline),
@@ -195,6 +204,7 @@ class _MainShellPageState extends State<MainShellPage> {
       setState(() {
         _currentIndex = 0;
         _exploreRefreshKey++;
+        _myEventsRefreshKey++;
       });
     }
   }

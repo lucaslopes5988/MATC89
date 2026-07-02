@@ -22,6 +22,7 @@ import '../../presentation/create/bloc/create_event_cubit.dart' as _i707;
 import '../../presentation/details/bloc/event_details_cubit.dart' as _i607;
 import '../../presentation/explore/bloc/explore_cubit.dart' as _i858;
 import '../../presentation/map/bloc/map_events_cubit.dart' as _i945;
+import '../../presentation/my_events/bloc/my_events_cubit.dart' as _i109;
 import 'events_external_module.dart' as _i923;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -43,6 +44,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i74.GetUpcomingEventsUseCase>(
       () => _i74.GetUpcomingEventsUseCase(gh<_i616.IEventsRepository>()),
+    );
+    gh.factory<_i74.GetJoinedEventsUseCase>(
+      () => _i74.GetJoinedEventsUseCase(gh<_i616.IEventsRepository>()),
     );
     gh.factory<_i74.GetEventByIdUseCase>(
       () => _i74.GetEventByIdUseCase(gh<_i616.IEventsRepository>()),
@@ -68,6 +72,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i74.JoinEventUseCase>(),
         gh<_i74.LeaveEventUseCase>(),
       ),
+    );
+    gh.factory<_i109.MyEventsCubit>(
+      () => _i109.MyEventsCubit(gh<_i74.GetJoinedEventsUseCase>()),
     );
     gh.factory<_i707.CreateEventCubit>(
       () => _i707.CreateEventCubit(gh<_i74.CreateEventUseCase>()),

@@ -34,6 +34,23 @@ class EventsRepository implements IEventsRepository {
   }
 
   @override
+  AsyncResult<List<Event>> getJoinedEvents(String userId) async {
+    try {
+      final records = await _dataSource.getJoinedEvents(userId);
+      final events = records
+          .map((record) => record.dto.toDomain(id: record.id))
+          .toList();
+      return Result.ok(events);
+    } on FirebaseException catch (error) {
+      return Result.error(_mapFirebaseError(error));
+    } catch (_) {
+      return Result.error(
+        const FirebaseDataException('Erro ao carregar sua agenda'),
+      );
+    }
+  }
+
+  @override
   AsyncResult<Event> getEventById(String eventId) async {
     try {
       final record = await _dataSource.getEventById(eventId);

@@ -16,6 +16,17 @@ class GetUpcomingEventsUseCase {
 }
 
 @injectable
+class GetJoinedEventsUseCase {
+  const GetJoinedEventsUseCase(this._repository);
+
+  final IEventsRepository _repository;
+
+  AsyncResult<List<Event>> invoke(String userId) {
+    return _repository.getJoinedEvents(userId);
+  }
+}
+
+@injectable
 class GetEventByIdUseCase {
   const GetEventByIdUseCase(this._repository);
 
