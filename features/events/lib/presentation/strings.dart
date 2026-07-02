@@ -41,9 +41,25 @@ abstract final class EventsStrings {
   static const createFutureDateRequired = 'Informe um horario futuro';
   static const requiredField = 'Campo obrigatorio';
   static const invalidMaxParticipants = 'Informe um numero maior que zero';
+  static const womenOnlyRestricted = 'Este evento é exclusivo para mulheres';
   static const mapPlaceholderTitle = 'Mapa em breve';
   static const mapPlaceholderMessage =
       'A visualização no Google Maps entra na próxima iteração.';
+  static const locationPickerLabel = 'Localização no mapa';
+  static const locationPickerUseMyLocation = 'Usar minha localização';
+  static const locationPickerHint = 'Toque no mapa para marcar o local';
+  static const locationPermissionTitle = 'Permissão de localização';
+  static const locationPermissionMessage =
+      'Precisamos da sua localização para mostrar o mapa.';
+  static const locationPermissionDenied =
+      'Permissão negada. Abra as configurações para ativar.';
+  static const locationPermissionOpenSettings = 'Abrir configurações';
+  static const locationSearching = 'Buscando local...';
+  static const locationFound = 'Local encontrado no mapa';
+  static const locationNotFound = 'Local não encontrado. Tente outro endereço.';
+  static const locationSearchError = 'Erro ao buscar local';
+  static const locationSearchEmpty = 'Digite o nome do local para buscar';
+  static const locationSearchAction = 'Buscar no mapa';
   static const profilePlaceholderTitle = 'Perfil em breve';
   static const profilePlaceholderMessage =
       'Eventos que você participa e organiza aparecerão aqui.';

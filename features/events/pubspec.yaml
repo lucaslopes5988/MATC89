@@ -19,9 +19,15 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
+  geoflutterfire_plus: ^0.0.28
+  geolocator: ^13.0.2
   get_it: ^8.0.3
+  google_maps_flutter: ^2.12.1
   injectable: ^2.5.0
   intl: ^0.20.2
+  permission_handler: ^11.3.1
+  url_launcher: ^6.3.2
+  geocoding: ^4.0.0
 
 dev_dependencies:
   build_runner: ^2.4.15

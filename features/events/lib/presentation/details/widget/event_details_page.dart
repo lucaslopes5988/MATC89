@@ -6,22 +6,27 @@ import 'package:get_it/get_it.dart';
 import 'package:events/domain/model/event.dart';
 import 'package:events/presentation/details/bloc/event_details_cubit.dart';
 import 'package:events/presentation/details/bloc/event_details_state.dart';
+import 'package:events/presentation/details/widget/event_location_map.dart';
 import 'package:events/presentation/strings.dart';
 
 class EventDetailsPage extends StatelessWidget {
   const EventDetailsPage({
     required this.event,
     required this.userId,
+    this.isWoman = false,
     super.key,
   });
 
   final Event event;
   final String userId;
+  final bool isWoman;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => GetIt.I.get<EventDetailsCubit>()..load(event),
+      create: (_) => GetIt.I.get<EventDetailsCubit>()
+        ..setIsWoman(isWoman)
+        ..load(event),
       child: _EventDetailsView(userId: userId),
     );
   }
@@ -164,6 +169,10 @@ class _DetailsContent extends StatelessWidget {
                   label: EventsStrings.detailsLocation,
                   value: event.locationName,
                 ),
+                if (event.location != null) ...[
+                  EventLocationMap(location: event.location!),
+                  const SizedBox(height: PlayceSpacing.md),
+                ],
                 _InfoRow(
                   icon: Icons.person_outline,
                   label: EventsStrings.detailsHost,

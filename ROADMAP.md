@@ -1,3 +1,67 @@
+---
+
+## Registro de Iterações
+
+### Iteração 1 — Mapa e Autoidentificação (02/07/2026)
+
+#### O que foi feito
+
+**Mapa integrado com Google Maps**
+
+- Adicionada a dependência do `google_maps_flutter` ao projeto.
+- Implementado o widget `EventLocationMap`, que exibe um mapa estático (lite mode no Android) na tela de detalhes do evento com um marcador na localização do evento.
+- O mapa na tela de detalhes tem o botão "Abrir no mapa" que abre o app de mapas nativo do dispositivo (Google Maps no Android, Apple Maps no iOS) com as coordenadas do evento.
+- Implementado o widget `LocationPickerField` para a tela de criação de evento. O usuário pode selecionar a localização do evento tocando no mapa ou arrastando o marcador. Também há um botão "Usar minha localização" que solicita permissão de localização e centraliza o mapa na posição atual.
+- Adicionada pesquisa de localização por texto na criação de evento usando o pacote `geocoding`. O campo de texto permite digitar um endereço e buscar as coordenadas. Quando há múltiplos resultados, um bottom sheet é exibido para o usuário escolher o local correto.
+- Adicionado o `LocationPermissionHandler` para gerenciar permissões de localização de forma centralizada.
+
+**Autoidentificação de gênero**
+
+- Criado o modelo `GenderIdentity` com os valores: `woman`, `man`, `nonBinary` e `preferNotToSay`.
+- Implementada a seção de identidade de gênero na tela de perfil (`ProfilePage`) usando `ChoiceChip` para seleção. O usuário pode selecionar ou desselecionar sua identidade de gênero.
+- O perfil é salvo no Firestore através do `ProfileRepository` e `ProfileCubit`.
+- A informação de gênero é usada para controlar o acesso a eventos exclusivos para mulheres:
+  - O `MainShellPage` carrega o perfil do usuário e verifica se `profile.isWoman` é verdadeiro.
+  - O flag `isWoman` é propagado para `ExplorePage`, `EventDetailsPage` e `EventDetailsCubit`.
+  - No `EventDetailsCubit`, ao carregar um evento marcado como `womenOnly`, se `isWoman` for `false`, o evento exibe um erro informando que é exclusivo para mulheres.
+
+**Criação de eventos com flag "Somente mulheres"**
+
+- Adicionado o campo `womenOnly` ao modelo `Event` e ao DTO `EventDbDto`.
+- Na tela de criação de evento, foi adicionado um `SwitchListTile` para marcar o evento como exclusivo para mulheres.
+- O badge "Somente mulheres" é exibido nos cards de evento e na tela de detalhes quando o evento possui esse flag.
+
+**Tela de detalhes do evento**
+
+- Exibe título, descrição, categoria (chip), badge de "Somente mulheres", data/hora, local, organizador, contagem de participantes e mapa com localização.
+- Botões de "Confirmar presença" e "Cancelar presença" com estados de loading.
+- Mensagens de status: "Você é o organizador", "Você já confirmou presença", "Evento lotado".
+- O organizador não pode sair do próprio evento.
+
+**Estrutura do projeto**
+
+- Arquitetura modular com feature packages separados: `auth`, `events`, `profile`, `core`, `design_system`, `commons`.
+- Uso de BLoC/Cubit para gerenciamento de estado.
+- Injeção de dependência com `get_it` e `injectable`.
+- Backend com Firebase (Firestore para dados, Firebase Auth para autenticação).
+- Design system próprio (`PlayceColors`, `PlayceSpacing`, `PlayceRadius`, componentes `Playce*`).
+
+#### Pontos de atenção
+
+1. **Bug na pesquisa de localização ao criar evento**: A busca por localização via texto está funcionando (o mapa mostra o local correto quando encontrado), porém exibe a mensagem de erro "O local não foi encontrado" mesmo quando o local é adicionado com sucesso. O fluxo ideal seria ir mostrando uma lista de locais encontrados conforme o usuário digita (autocomplete), em vez de buscar somente ao clicar no botão de pesquisa. Atualmente, se houver apenas 1 resultado, ele é aplicado diretamente sem mostrar opções; se houver múltiplos, abre um bottom sheet. A mensagem de erro falsa provavelmente vem do bloco `catch` genérico no método `_searchLocation()` que trata qualquer exceção como "local não encontrado".
+
+2. **Tela de perfil muito básica**: A `ProfilePage` atual mostra apenas o avatar, nome, email e a seção de seleção de identidade de gênero com chips, além do botão de logout. Não há campos para editar nome, bio, cidade, esportes de interesse ou nível de prática. O ideal seria ter um fluxo separado e mais elaborado para a seleção de gênero (possivelmente uma tela dedicada ou um modal com mais contexto e explicação), e expandir o perfil com as demais informações previstas no roadmap (seção 3.1).
+
+3. **Falta busca por eventos no Mapa**: A aba "Mapa" na navegação principal (`MainShellPage`) ainda é um placeholder (`_PlaceholderTab`) sem funcionalidade real. É super importante implementar a exibição de eventos como marcadores no mapa interativo antes da entrega final. Essa é a funcionalidade principal do app (seção 4 do roadmap) e o diferencial do produto. O mapa deve mostrar eventos próximos, permitir tocar em marcadores para ver detalhes e idealmente filtrar por categoria.
+
+4. **Verificar restrição de eventos "Somente mulheres"**: A lógica de restrição de eventos `womenOnly` precisa ser verificada de ponta a ponta. Atualmente, o `EventDetailsCubit` bloqueia o acesso a detalhes de eventos `womenOnly` se `isWoman` for `false`, mas é necessário confirmar que:
+   - O botão de "Confirmar presença" também está de fato desabilitado/bloqueado para usuários que não são mulheres (e não apenas a visualização dos detalhes).
+   - Na listagem (`ExplorePage`), eventos `womenOnly` continuam visíveis para todos (apenas a confirmação deve ser restrita), ou se devem ser filtrados da lista para não-mulheres.
+   - A flag `isWoman` está sendo corretamente derivada do perfil salvo no Firestore (e não apenas do estado local).
+   - Qualquer usuário que cria um evento "Somente mulheres" pode fazê-lo independente do gênero, ou se essa opção deveria ser restrita.
+
+---
+
 O app deve funcionar como uma rede social geolocalizada para encontros esportivos e eventos presenciais.
 
 O usuário abre o mapa, vê eventos próximos, toca em um marcador, entende o que vai acontecer, quem está participando e decide se quer confirmar presença.
@@ -52,6 +116,8 @@ Adicionar esportes de interesse.
 Adicionar nível de prática, por exemplo: iniciante, intermediário ou avançado.
 
 Adicionar descrição curta.
+
+Adicionar informação de gênero do usuário caso seja mulher (para acessar eventos exclusivos.)
 
 Visualizar perfil de outros usuários.
 

@@ -10,9 +10,14 @@ import 'package:events/presentation/explore/bloc/explore_state.dart';
 import 'package:events/presentation/strings.dart';
 
 class ExplorePage extends StatefulWidget {
-  const ExplorePage({required this.userId, super.key});
+  const ExplorePage({
+    required this.userId,
+    this.isWoman = false,
+    super.key,
+  });
 
   final String userId;
+  final bool isWoman;
 
   @override
   State<ExplorePage> createState() => _ExplorePageState();
@@ -24,7 +29,9 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   void initState() {
     super.initState();
-    _cubit = GetIt.I.get<ExploreCubit>()..load();
+    _cubit = GetIt.I.get<ExploreCubit>()
+      ..setIsWoman(widget.isWoman)
+      ..load();
   }
 
   @override
@@ -37,15 +44,16 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: _ExploreView(userId: widget.userId),
+      child: _ExploreView(userId: widget.userId, isWoman: widget.isWoman),
     );
   }
 }
 
 class _ExploreView extends StatelessWidget {
-  const _ExploreView({required this.userId});
+  const _ExploreView({required this.userId, this.isWoman = false});
 
   final String userId;
+  final bool isWoman;
 
   static const _filters = [
     SportType.all,
@@ -147,6 +155,7 @@ class _ExploreView extends StatelessWidget {
                           event: events[index],
                           userId: userId,
                           selectedSport: state.selectedSport,
+                          isWoman: isWoman,
                         );
                       },
                     ),
@@ -166,11 +175,13 @@ class _EventCard extends StatelessWidget {
     required this.event,
     required this.userId,
     required this.selectedSport,
+    this.isWoman = false,
   });
 
   final Event event;
   final String userId;
   final SportType selectedSport;
+  final bool isWoman;
 
   @override
   Widget build(BuildContext context) {
@@ -259,7 +270,11 @@ class _EventCard extends StatelessWidget {
   Future<void> _openDetails(BuildContext context) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => EventDetailsPage(event: event, userId: userId),
+        builder: (_) => EventDetailsPage(
+          event: event,
+          userId: userId,
+          isWoman: isWoman,
+        ),
       ),
     );
 
