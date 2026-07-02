@@ -7,27 +7,44 @@ import 'event_details_state.dart';
 
 @injectable
 class EventDetailsCubit extends SafeCubit<EventDetailsState> {
-  EventDetailsCubit(
-    this._getEventByIdUseCase,
-    this._joinEventUseCase,
-    this._leaveEventUseCase,
-  ) : super(const EventDetailsInitialState());
+ EventDetailsCubit(
+ this._getEventByIdUseCase,
+ this._joinEventUseCase,
+ this._leaveEventUseCase,
+ ) : super(const EventDetailsInitialState());
 
-  final GetEventByIdUseCase _getEventByIdUseCase;
-  final JoinEventUseCase _joinEventUseCase;
-  final LeaveEventUseCase _leaveEventUseCase;
+ final GetEventByIdUseCase _getEventByIdUseCase;
+ final JoinEventUseCase _joinEventUseCase;
+ final LeaveEventUseCase _leaveEventUseCase;
 
-  Future<void> load(Event initialEvent) async {
-    emit(EventDetailsLoadedState(event: initialEvent));
+ bool _isWoman = false;
 
-    final result = await _getEventByIdUseCase.invoke(initialEvent.id);
-    switch (result) {
-      case Ok(value: final event):
-        emit(EventDetailsLoadedState(event: event));
-      case Error(error: final error):
-        emit(EventDetailsErrorState(message: _messageFor(error)));
-    }
-  }
+ void setIsWoman(bool value) => _isWoman = value;
+
+ Future<void> load(Event initialEvent) async {
+ if (initialEvent.womenOnly && !_isWoman) {
+   emit(const EventDetailsErrorState(
+     message: 'Este evento é exclusivo para mulheres',
+   ));
+   return;
+ }
+
+ emit(EventDetailsLoadedState(event: initialEvent));
+
+ final result = await _getEventByIdUseCase.invoke(initialEvent.id);
+ switch (result) {
+ case Ok(value: final event):
+   if (event.womenOnly && !_isWoman) {
+     emit(const EventDetailsErrorState(
+       message: 'Este evento é exclusivo para mulheres',
+     ));
+     return;
+   }
+   emit(EventDetailsLoadedState(event: event));
+ case Error(error: final error):
+ emit(EventDetailsErrorState(message: _messageFor(error)));
+ }
+ }
 
   Future<void> join(Event event, String userId) async {
     emit(EventDetailsActionLoadingState(event: event));

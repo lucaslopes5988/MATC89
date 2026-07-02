@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:events/data/geo/geohash_util.dart';
 
 import '../../../domain/model/event.dart';
 import '../dto/db/event_db_dto.dart';
@@ -13,8 +14,12 @@ extension EventDbDtoMapper on EventDbDto {
       startAt: startAt.toDate(),
       endAt: endAt.toDate(),
       locationName: locationName,
-      location: latitude != null && longitude != null
-          ? GeoLocation(latitude: latitude!, longitude: longitude!)
+      location: geopoint != null
+          ? GeoLocation(
+              latitude: geopoint!.latitude,
+              longitude: geopoint!.longitude,
+              geohash: geohash,
+            )
           : null,
       hostId: hostId,
       hostName: hostName,
@@ -35,6 +40,14 @@ SportType _parseSportType(String value) {
 
 extension EventDomainMapper on Event {
   EventDbDto toDbDto() {
+    GeoPoint? geopoint;
+    String? geohash;
+
+    if (location != null) {
+      geopoint = GeoPoint(location!.latitude, location!.longitude);
+      geohash = GeohashUtil.encode(location!.latitude, location!.longitude);
+    }
+
     return EventDbDto(
       title: title,
       description: description,
@@ -42,8 +55,8 @@ extension EventDomainMapper on Event {
       startAt: Timestamp.fromDate(startAt),
       endAt: Timestamp.fromDate(endAt),
       locationName: locationName,
-      latitude: location?.latitude,
-      longitude: location?.longitude,
+      geopoint: geopoint,
+      geohash: geohash,
       hostId: hostId,
       hostName: hostName,
       maxParticipants: maxParticipants,
