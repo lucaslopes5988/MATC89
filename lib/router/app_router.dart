@@ -2,7 +2,9 @@ import 'package:auth/auth.dart';
 import 'package:design_system/design_system.dart';
 import 'package:events/events.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:profile/profile.dart';
 
 abstract final class AppRoutes {
   static const authGate = '/';
@@ -96,48 +98,84 @@ class MainShellPage extends StatefulWidget {
 class _MainShellPageState extends State<MainShellPage> {
   int _currentIndex = 0;
   int _exploreRefreshKey = 0;
+  late final ProfileCubit _profileCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileCubit = GetIt.I.get<ProfileCubit>()..load(widget.user.id);
+  }
+
+  @override
+  void dispose() {
+    _profileCubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      ExplorePage(key: ValueKey(_exploreRefreshKey), userId: widget.user.id),
-      const _PlaceholderTab(
-        title: EventsStrings.mapPlaceholderTitle,
-        message: EventsStrings.mapPlaceholderMessage,
-        icon: Icons.map_outlined,
-      ),
-      _ProfileTab(user: widget.user),
-    ];
+    return BlocProvider.value(
+      value: _profileCubit,
+      child: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, profileState) {
+          final isWoman = switch (profileState) {
+            ProfileLoadedState(:final profile) => profile.isWoman,
+            ProfileActionLoadingState(:final profile) => profile.isWoman,
+            _ => false,
+          };
 
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: pages),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreateEvent,
-        icon: const Icon(Icons.add),
-        label: const Text('Criar'),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentIndex = index);
+          final pages = [
+            ExplorePage(
+              key: ValueKey(_exploreRefreshKey),
+              userId: widget.user.id,
+              isWoman: isWoman,
+            ),
+            const _PlaceholderTab(
+              title: EventsStrings.mapPlaceholderTitle,
+              message: EventsStrings.mapPlaceholderMessage,
+              icon: Icons.map_outlined,
+            ),
+            ProfilePage(
+              userId: widget.user.id,
+              email: widget.user.email,
+              displayName: widget.user.displayName,
+              photoUrl: widget.user.photoUrl,
+              onSignOut: () => GetIt.I.get<SignOutUseCase>().invoke(),
+            ),
+          ];
+
+          return Scaffold(
+            body: IndexedStack(index: _currentIndex, children: pages),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _openCreateEvent,
+              icon: const Icon(Icons.add),
+              label: const Text('Criar'),
+            ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                setState(() => _currentIndex = index);
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.explore_outlined),
+                  selectedIcon: Icon(Icons.explore),
+                  label: 'Explorar',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.map_outlined),
+                  selectedIcon: Icon(Icons.map),
+                  label: 'Mapa',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline),
+                  selectedIcon: Icon(Icons.person),
+                  label: 'Perfil',
+                ),
+              ],
+            ),
+          );
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Explorar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Mapa',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
       ),
     );
   }
@@ -176,69 +214,5 @@ class _PlaceholderTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PlayceEmptyState(title: title, message: message, icon: icon);
-  }
-}
-
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab({required this.user});
-
-  final User user;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(PlayceSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundImage: user.photoUrl != null
-                      ? NetworkImage(user.photoUrl!)
-                      : null,
-                  child: user.photoUrl == null
-                      ? const Icon(Icons.person)
-                      : null,
-                ),
-                const SizedBox(width: PlayceSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.displayName ?? 'Atleta',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        user.email,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: PlayceColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: PlayceSpacing.xl),
-            const Expanded(
-              child: PlayceEmptyState(
-                title: EventsStrings.profilePlaceholderTitle,
-                message: EventsStrings.profilePlaceholderMessage,
-                icon: Icons.event_note_outlined,
-              ),
-            ),
-            PlaycePrimaryButton(
-              label: 'Sair',
-              icon: Icons.logout,
-              onPressed: () => GetIt.I.get<SignOutUseCase>().invoke(),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

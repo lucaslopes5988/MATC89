@@ -13,13 +13,18 @@ enum SportType {
 }
 
 class GeoLocation extends Equatable {
-  const GeoLocation({required this.latitude, required this.longitude});
+ const GeoLocation({
+   required this.latitude,
+   required this.longitude,
+   this.geohash,
+ });
 
-  final double latitude;
-  final double longitude;
+ final double latitude;
+ final double longitude;
+ final String? geohash;
 
-  @override
-  List<Object?> get props => [latitude, longitude];
+ @override
+ List<Object?> get props => [latitude, longitude, geohash];
 }
 
 class Event extends Equatable {

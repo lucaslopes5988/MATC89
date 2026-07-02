@@ -1,11 +1,14 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:get_it/get_it.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:events/domain/model/event.dart';
 import 'package:events/presentation/create/bloc/create_event_cubit.dart';
 import 'package:events/presentation/create/bloc/create_event_state.dart';
+import 'package:events/presentation/create/widget/location_picker_field.dart';
 import 'package:events/presentation/strings.dart';
 
 class CreateEventPage extends StatelessWidget {
@@ -59,6 +62,8 @@ class _CreateEventViewState extends State<_CreateEventView> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   bool _womenOnly = false;
+  LatLng? _selectedLocation;
+  bool _isSearchingLocation = false;
 
   @override
   void dispose() {
@@ -131,11 +136,33 @@ class _CreateEventViewState extends State<_CreateEventView> {
                   const SizedBox(height: PlayceSpacing.md),
                   TextFormField(
                     controller: _locationController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: EventsStrings.createLocationLabel,
+                      suffixIcon: _isSearchingLocation
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.search),
+                              tooltip: EventsStrings.locationSearchAction,
+                              onPressed: _searchLocation,
+                            ),
                     ),
-                    textInputAction: TextInputAction.next,
+                    textInputAction: TextInputAction.search,
+                    onFieldSubmitted: (_) => _searchLocation(),
                     validator: _requiredValidator,
+                  ),
+                  const SizedBox(height: PlayceSpacing.md),
+                  LocationPickerField(
+                    initialLocation: _selectedLocation,
+                    onLocationSelected: (latLng) {
+                      setState(() => _selectedLocation = latLng);
+                    },
                   ),
                   const SizedBox(height: PlayceSpacing.md),
                   _DateTimeFields(
@@ -215,6 +242,72 @@ class _CreateEventViewState extends State<_CreateEventView> {
     }
   }
 
+  Future<void> _searchLocation() async {
+    final query = _locationController.text.trim();
+    if (query.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(EventsStrings.locationSearchEmpty)),
+      );
+      return;
+    }
+
+    setState(() => _isSearchingLocation = true);
+
+    try {
+      final locations = await geocoding.locationFromAddress(query);
+
+      if (!mounted) return;
+
+      if (locations.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(EventsStrings.locationNotFound)),
+        );
+        return;
+      }
+
+      if (locations.length == 1) {
+        _applyGeocodingResult(locations.first);
+        return;
+      }
+
+      final placemarks = await Future.wait(
+        locations.take(5).map(
+          (loc) => geocoding
+              .placemarkFromCoordinates(loc.latitude, loc.longitude)
+              .then((p) => (location: loc, placemark: p.firstOrNull))
+              .catchError((_) => (location: loc, placemark: null as geocoding.Placemark?)),
+        ),
+      );
+
+      if (!mounted) return;
+
+      final selected = await showModalBottomSheet<geocoding.Location>(
+        context: context,
+        builder: (context) => _LocationResultsSheet(results: placemarks),
+      );
+
+      if (selected != null && mounted) {
+        _applyGeocodingResult(selected);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(EventsStrings.locationNotFound)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSearchingLocation = false);
+    }
+  }
+
+  void _applyGeocodingResult(geocoding.Location location) {
+    final latLng = LatLng(location.latitude, location.longitude);
+    setState(() => _selectedLocation = latLng);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(EventsStrings.locationFound)),
+    );
+  }
+
   void _submit() {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
@@ -258,6 +351,12 @@ class _CreateEventViewState extends State<_CreateEventView> {
       startAt: startAt,
       endAt: startAt.add(const Duration(hours: 1)),
       locationName: _locationController.text.trim(),
+      location: _selectedLocation != null
+          ? GeoLocation(
+              latitude: _selectedLocation!.latitude,
+              longitude: _selectedLocation!.longitude,
+            )
+          : null,
       hostId: widget.userId,
       hostName: hostName,
       maxParticipants: maxParticipants,
@@ -343,5 +442,74 @@ class _DateTimeFields extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _LocationResultsSheet extends StatelessWidget {
+  const _LocationResultsSheet({required this.results});
+
+  final List<({geocoding.Location location, geocoding.Placemark? placemark})>
+      results;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              PlayceSpacing.lg,
+              PlayceSpacing.lg,
+              PlayceSpacing.lg,
+              PlayceSpacing.sm,
+            ),
+            child: Text(
+              'Selecione o local',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: results.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final result = results[index];
+                final title = _formatPlacemark(result.placemark);
+                final subtitle =
+                    '${result.location.latitude.toStringAsFixed(5)}, '
+                    '${result.location.longitude.toStringAsFixed(5)}';
+
+                return ListTile(
+                  leading: const Icon(Icons.location_on_outlined),
+                  title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(subtitle),
+                  onTap: () => Navigator.pop(context, result.location),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPlacemark(geocoding.Placemark? placemark) {
+    if (placemark == null) return 'Local encontrado';
+
+    final parts = <String>[
+      if (placemark.street?.isNotEmpty == true) placemark.street!,
+      if (placemark.subLocality?.isNotEmpty == true) placemark.subLocality!,
+      if (placemark.locality?.isNotEmpty == true) placemark.locality!,
+      if (placemark.administrativeArea?.isNotEmpty == true)
+        placemark.administrativeArea!,
+    ];
+
+    return parts.isEmpty ? 'Local encontrado' : parts.join(', ');
   }
 }
