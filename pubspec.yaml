@@ -17,6 +17,8 @@ dependencies:
     path: design_system
   events:
     path: features/events
+  profile:
+    path: features/profile
   firebase_core: ^3.13.0
   flutter:
     sdk: flutter

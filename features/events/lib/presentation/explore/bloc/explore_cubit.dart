@@ -7,35 +7,42 @@ import 'explore_state.dart';
 
 @injectable
 class ExploreCubit extends SafeCubit<ExploreState> {
-  ExploreCubit(this._getUpcomingEventsUseCase)
-    : super(const ExploreInitialState());
+ ExploreCubit(this._getUpcomingEventsUseCase)
+ : super(const ExploreInitialState());
 
-  final GetUpcomingEventsUseCase _getUpcomingEventsUseCase;
+ final GetUpcomingEventsUseCase _getUpcomingEventsUseCase;
 
-  Future<void> load({SportType? sportType}) async {
-    emit(const ExploreLoadingState());
+ bool _isWoman = false;
 
-    final result = await _getUpcomingEventsUseCase.invoke(sportType: sportType);
+ void setIsWoman(bool value) => _isWoman = value;
 
-    switch (result) {
-      case Ok(value: final events):
-        emit(
-          ExploreLoadedState(
-            events: events,
-            selectedSport: sportType ?? SportType.all,
-          ),
-        );
-      case Error(error: final error) when error is ConnectionException:
-        emit(const ExploreErrorState(message: 'Sem conexão'));
-      case Error(error: final error) when error is FirebaseDataException:
-        emit(ExploreErrorState(message: error.message));
-      case Error():
-        emit(const ExploreErrorState(message: 'Erro ao carregar eventos'));
-    }
-  }
+ Future<void> load({SportType? sportType}) async {
+ emit(const ExploreLoadingState());
 
-  Future<void> filterBySport(SportType sportType) {
-    final filter = sportType == SportType.all ? null : sportType;
-    return load(sportType: filter);
-  }
+ final result = await _getUpcomingEventsUseCase.invoke(sportType: sportType);
+
+ switch (result) {
+ case Ok(value: final events):
+   final visible = _isWoman
+       ? events
+       : events.where((e) => !e.womenOnly).toList();
+   emit(
+     ExploreLoadedState(
+       events: visible,
+       selectedSport: sportType ?? SportType.all,
+     ),
+   );
+ case Error(error: final error) when error is ConnectionException:
+ emit(const ExploreErrorState(message: 'Sem conexão'));
+ case Error(error: final error) when error is FirebaseDataException:
+ emit(ExploreErrorState(message: error.message));
+ case Error():
+ emit(const ExploreErrorState(message: 'Erro ao carregar eventos'));
+ }
+ }
+
+ Future<void> filterBySport(SportType sportType) {
+ final filter = sportType == SportType.all ? null : sportType;
+ return load(sportType: filter);
+ }
 }
