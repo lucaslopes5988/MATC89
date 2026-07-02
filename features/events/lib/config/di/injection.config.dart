@@ -21,6 +21,7 @@ import '../../domain/usecase/events_usecases.dart' as _i74;
 import '../../presentation/create/bloc/create_event_cubit.dart' as _i707;
 import '../../presentation/details/bloc/event_details_cubit.dart' as _i607;
 import '../../presentation/explore/bloc/explore_cubit.dart' as _i858;
+import '../../presentation/map/bloc/map_events_cubit.dart' as _i945;
 import 'events_external_module.dart' as _i923;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -57,6 +58,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i858.ExploreCubit>(
       () => _i858.ExploreCubit(gh<_i74.GetUpcomingEventsUseCase>()),
+    );
+    gh.factory<_i945.MapEventsCubit>(
+      () => _i945.MapEventsCubit(gh<_i74.GetUpcomingEventsUseCase>()),
     );
     gh.factory<_i607.EventDetailsCubit>(
       () => _i607.EventDetailsCubit(

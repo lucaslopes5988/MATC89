@@ -1,6 +1,5 @@
-import 'dart:io' show Platform;
-
 import 'package:design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,17 +24,15 @@ class EventLocationMap extends StatelessWidget {
             child: SizedBox(
               height: 180,
               child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: target,
-                  zoom: 15,
-                ),
+                initialCameraPosition: CameraPosition(target: target, zoom: 15),
                 markers: {
                   Marker(
                     markerId: const MarkerId('event_location'),
                     position: target,
                   ),
                 },
-                liteModeEnabled: Platform.isAndroid,
+                liteModeEnabled:
+                    !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
                 zoomControlsEnabled: false,
                 scrollGesturesEnabled: false,
                 tiltGesturesEnabled: false,
@@ -62,7 +59,11 @@ class EventLocationMap extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.open_in_new, size: 16, color: PlayceColors.primary),
+                    Icon(
+                      Icons.open_in_new,
+                      size: 16,
+                      color: PlayceColors.primary,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Abrir no mapa',
@@ -86,16 +87,16 @@ class EventLocationMap extends StatelessWidget {
     final lat = location.latitude;
     final lng = location.longitude;
 
-    final url = Platform.isIOS
+    final url = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
         ? Uri.parse('https://maps.apple.com/?ll=$lat,$lng&q=$lat,$lng')
-        : Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+        : Uri.parse(
+            'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+          );
 
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      final fallback = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
-      );
+      final fallback = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
       await launchUrl(fallback, mode: LaunchMode.externalApplication);
     }
   }

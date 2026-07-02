@@ -42,9 +42,8 @@ abstract final class EventsStrings {
   static const requiredField = 'Campo obrigatorio';
   static const invalidMaxParticipants = 'Informe um numero maior que zero';
   static const womenOnlyRestricted = 'Este evento é exclusivo para mulheres';
-  static const mapPlaceholderTitle = 'Mapa em breve';
-  static const mapPlaceholderMessage =
-      'A visualização no Google Maps entra na próxima iteração.';
+  static const mapEmptyMessage =
+      'Nenhum evento com localizacao para mostrar no mapa.';
   static const locationPickerLabel = 'Localização no mapa';
   static const locationPickerUseMyLocation = 'Usar minha localização';
   static const locationPickerHint = 'Toque no mapa para marcar o local';

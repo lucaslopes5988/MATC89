@@ -130,10 +130,10 @@ class _MainShellPageState extends State<MainShellPage> {
               userId: widget.user.id,
               isWoman: isWoman,
             ),
-            const _PlaceholderTab(
-              title: EventsStrings.mapPlaceholderTitle,
-              message: EventsStrings.mapPlaceholderMessage,
-              icon: Icons.map_outlined,
+            MapEventsPage(
+              key: ValueKey('map-$_exploreRefreshKey'),
+              userId: widget.user.id,
+              isWoman: isWoman,
             ),
             ProfilePage(
               userId: widget.user.id,
@@ -197,22 +197,5 @@ class _MainShellPageState extends State<MainShellPage> {
         _exploreRefreshKey++;
       });
     }
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.title,
-    required this.message,
-    required this.icon,
-  });
-
-  final String title;
-  final String message;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return PlayceEmptyState(title: title, message: message, icon: icon);
   }
 }
