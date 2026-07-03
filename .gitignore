@@ -45,6 +45,9 @@ app.*.map.json
 /android/app/release
 android/app/google-services.json
 
+# Web secrets (Google Maps API key)
+web/maps_config.js
+
 # Local editor/tooling metadata
 .fvm/.cursor/mcp.json
 .cursor/mcp.json
