@@ -1,7 +1,16 @@
 // Copie este arquivo como maps_config.js e substitua pela sua chave.
 // O arquivo maps_config.js é ignorado pelo git.
-(function loadGoogleMaps() {
-  var script = document.createElement('script');
-  script.src = 'https://maps.googleapis.com/maps/api/js?key=YOUR_MAPS_API_KEY&loading=async&v=weekly&libraries=places';
-  document.head.appendChild(script);
+(function loadGoogleMapsThenFlutter() {
+  window.playceGoogleMapsReady = function playceGoogleMapsReady() {
+    var flutterScript = document.createElement('script');
+    flutterScript.src = 'flutter_bootstrap.js';
+    flutterScript.async = true;
+    document.body.appendChild(flutterScript);
+  };
+
+  var mapsScript = document.createElement('script');
+  mapsScript.src = 'https://maps.googleapis.com/maps/api/js?key=YOUR_MAPS_API_KEY&loading=async&v=weekly&libraries=places&callback=playceGoogleMapsReady';
+  mapsScript.async = true;
+  mapsScript.defer = true;
+  document.head.appendChild(mapsScript);
 })();

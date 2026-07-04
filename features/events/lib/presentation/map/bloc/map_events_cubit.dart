@@ -13,28 +13,28 @@ class MapEventsCubit extends SafeCubit<MapEventsState> {
   final GetUpcomingEventsUseCase _getUpcomingEventsUseCase;
 
   bool _isWoman = false;
+  List<Event> _baseEvents = const [];
+  SportType _selectedSport = SportType.all;
+  DateTime? _selectedDate;
+  int? _startMinute;
+  int? _endMinute;
 
   void setIsWoman(bool value) => _isWoman = value;
 
-  Future<void> load({SportType? sportType}) async {
+  Future<void> load() async {
     emit(const MapEventsLoadingState());
 
-    final result = await _getUpcomingEventsUseCase.invoke(sportType: sportType);
+    final result = await _getUpcomingEventsUseCase.invoke();
 
     switch (result) {
       case Ok(value: final events):
-        final visible = events.where((event) {
+        _baseEvents = events.where((event) {
           final hasLocation = event.location != null;
           final canSeeWomenOnly = _isWoman || !event.womenOnly;
           return hasLocation && canSeeWomenOnly;
         }).toList();
 
-        emit(
-          MapEventsLoadedState(
-            events: visible,
-            selectedSport: sportType ?? SportType.all,
-          ),
-        );
+        _emitFiltered();
       case Error(error: final error) when error is ConnectionException:
         emit(const MapEventsErrorState(message: 'Sem conexao'));
       case Error(error: final error) when error is FirebaseDataException:
@@ -44,8 +44,72 @@ class MapEventsCubit extends SafeCubit<MapEventsState> {
     }
   }
 
-  Future<void> filterBySport(SportType sportType) {
-    final filter = sportType == SportType.all ? null : sportType;
-    return load(sportType: filter);
+  void filterBySport(SportType sportType) {
+    _selectedSport = sportType;
+    _emitFiltered();
+  }
+
+  void filterByDate(DateTime? date) {
+    _selectedDate = date == null
+        ? null
+        : DateTime(date.year, date.month, date.day);
+    _emitFiltered();
+  }
+
+  void filterByTimeRange({int? startMinute, int? endMinute}) {
+    if (startMinute != null && endMinute != null && endMinute < startMinute) {
+      _startMinute = endMinute;
+      _endMinute = startMinute;
+    } else {
+      _startMinute = startMinute;
+      _endMinute = endMinute;
+    }
+    _emitFiltered();
+  }
+
+  void clearFilters() {
+    _selectedSport = SportType.all;
+    _selectedDate = null;
+    _startMinute = null;
+    _endMinute = null;
+    _emitFiltered();
+  }
+
+  void _emitFiltered() {
+    final filtered = _baseEvents.where((event) {
+      if (_selectedSport != SportType.all &&
+          event.sportType != _selectedSport) {
+        return false;
+      }
+
+      if (_selectedDate != null) {
+        final start = event.startAt;
+        final sameDay =
+            start.year == _selectedDate!.year &&
+            start.month == _selectedDate!.month &&
+            start.day == _selectedDate!.day;
+        if (!sameDay) return false;
+      }
+
+      final eventMinute = event.startAt.hour * 60 + event.startAt.minute;
+      if (_startMinute != null && eventMinute < _startMinute!) {
+        return false;
+      }
+      if (_endMinute != null && eventMinute > _endMinute!) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    emit(
+      MapEventsLoadedState(
+        events: filtered,
+        selectedSport: _selectedSport,
+        selectedDate: _selectedDate,
+        startMinute: _startMinute,
+        endMinute: _endMinute,
+      ),
+    );
   }
 }

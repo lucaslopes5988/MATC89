@@ -21,13 +21,25 @@ final class MapEventsLoadedState extends MapEventsState {
   const MapEventsLoadedState({
     required this.events,
     this.selectedSport = SportType.all,
+    this.selectedDate,
+    this.startMinute,
+    this.endMinute,
   });
 
   final List<Event> events;
   final SportType selectedSport;
+  final DateTime? selectedDate;
+  final int? startMinute;
+  final int? endMinute;
 
   @override
-  List<Object?> get props => [events, selectedSport];
+  List<Object?> get props => [
+    events,
+    selectedSport,
+    selectedDate,
+    startMinute,
+    endMinute,
+  ];
 }
 
 final class MapEventsErrorState extends MapEventsState {

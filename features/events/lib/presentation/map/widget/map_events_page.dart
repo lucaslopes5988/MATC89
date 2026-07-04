@@ -1,7 +1,7 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -102,26 +102,27 @@ class _MapEventsViewState extends State<_MapEventsView> {
             }
           },
           builder: (context, state) {
-            return Stack(
+            return Column(
               children: [
-                Positioned.fill(child: _buildMap(context, state)),
-                Positioned(
-                  top: PlayceSpacing.md,
-                  left: 0,
-                  right: 0,
-                  child: _FilterBar(filters: _filters, state: state),
-                ),
-                if (state is MapEventsLoadingState ||
-                    state is MapEventsInitialState)
-                  const Center(child: CircularProgressIndicator()),
-                if (state is MapEventsErrorState)
-                  PlayceEmptyState(
-                    title: 'Ops!',
-                    message: state.message,
-                    icon: Icons.cloud_off_outlined,
+                _MapFiltersHeader(filters: _filters, state: state),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: _buildMap(context, state)),
+                      if (state is MapEventsLoadingState ||
+                          state is MapEventsInitialState)
+                        const Center(child: CircularProgressIndicator()),
+                      if (state is MapEventsErrorState)
+                        PlayceEmptyState(
+                          title: 'Ops!',
+                          message: state.message,
+                          icon: Icons.cloud_off_outlined,
+                        ),
+                      if (state is MapEventsLoadedState && state.events.isEmpty)
+                        const _MapEmptyOverlay(),
+                    ],
                   ),
-                if (state is MapEventsLoadedState && state.events.isEmpty)
-                  const _MapEmptyOverlay(),
+                ),
               ],
             );
           },
@@ -374,7 +375,7 @@ class _MapEventsViewState extends State<_MapEventsView> {
       final selectedSport = state is MapEventsLoadedState
           ? state.selectedSport
           : SportType.all;
-      await context.read<MapEventsCubit>().filterBySport(selectedSport);
+      context.read<MapEventsCubit>().filterBySport(selectedSport);
     }
   }
 
@@ -395,7 +396,10 @@ class _MapEventsViewState extends State<_MapEventsView> {
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    if (!kIsWeb) {
+      _mapController?.dispose();
+    }
+    _mapController = null;
     super.dispose();
   }
 }
@@ -412,37 +416,231 @@ class _EventMarkerGroup {
   final List<Event> events;
 }
 
-class _FilterBar extends StatelessWidget {
-  const _FilterBar({required this.filters, required this.state});
+class _MapFiltersHeader extends StatelessWidget {
+  const _MapFiltersHeader({required this.filters, required this.state});
 
   final List<SportType> filters;
   final MapEventsState state;
 
   @override
   Widget build(BuildContext context) {
+    final isLoaded = state is MapEventsLoadedState;
     final selectedSport = state is MapEventsLoadedState
         ? (state as MapEventsLoadedState).selectedSport
         : SportType.all;
+    final selectedDate = state is MapEventsLoadedState
+        ? (state as MapEventsLoadedState).selectedDate
+        : null;
+    final startMinute = state is MapEventsLoadedState
+        ? (state as MapEventsLoadedState).startMinute
+        : null;
+    final endMinute = state is MapEventsLoadedState
+        ? (state as MapEventsLoadedState).endMinute
+        : null;
+    final hasFilters =
+        selectedSport != SportType.all ||
+        selectedDate != null ||
+        startMinute != null ||
+        endMinute != null;
 
-    return SizedBox(
-      height: 44,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: PlayceSpacing.md),
-        child: Row(
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          PlayceSpacing.md,
+          PlayceSpacing.sm,
+          PlayceSpacing.md,
+          PlayceSpacing.sm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            for (int i = 0; i < filters.length; i++) ...[
-              if (i > 0) const SizedBox(width: PlayceSpacing.sm),
-              FilterChip(
-                label: Text(sportTypeLabel(filters[i])),
-                selected: selectedSport == filters[i],
-                onSelected: (_) =>
-                    context.read<MapEventsCubit>().filterBySport(filters[i]),
+            Row(
+              children: [
+                const Spacer(),
+                if (hasFilters)
+                  TextButton.icon(
+                    onPressed: isLoaded
+                        ? () => context.read<MapEventsCubit>().clearFilters()
+                        : null,
+                    icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                    label: const Text('Limpar'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: PlayceSpacing.xs),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int i = 0; i < filters.length; i++) ...[
+                    if (i > 0) const SizedBox(width: PlayceSpacing.sm),
+                    FilterChip(
+                      label: Text(sportTypeLabel(filters[i])),
+                      selected: selectedSport == filters[i],
+                      onSelected: isLoaded
+                          ? (_) => context.read<MapEventsCubit>().filterBySport(
+                              filters[i],
+                            )
+                          : null,
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
+            const SizedBox(height: PlayceSpacing.xs),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _FilterActionChip(
+                    icon: Icons.calendar_today,
+                    label: selectedDate == null
+                        ? 'Data'
+                        : _formatDate(selectedDate),
+                    selected: selectedDate != null,
+                    onPressed: isLoaded
+                        ? () => _pickDate(context, selectedDate)
+                        : null,
+                  ),
+                  const SizedBox(width: PlayceSpacing.sm),
+                  _FilterActionChip(
+                    icon: Icons.schedule,
+                    label: startMinute == null
+                        ? 'Inicio'
+                        : 'Inicio ${_formatMinute(startMinute)}',
+                    selected: startMinute != null,
+                    onPressed: isLoaded
+                        ? () => _pickStartTime(
+                            context,
+                            startMinute: startMinute,
+                            endMinute: endMinute,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: PlayceSpacing.sm),
+                  _FilterActionChip(
+                    icon: Icons.schedule_outlined,
+                    label: endMinute == null
+                        ? 'Fim'
+                        : 'Fim ${_formatMinute(endMinute)}',
+                    selected: endMinute != null,
+                    onPressed: isLoaded
+                        ? () => _pickEndTime(
+                            context,
+                            startMinute: startMinute,
+                            endMinute: endMinute,
+                          )
+                        : null,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _pickDate(BuildContext context, DateTime? selectedDate) async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? now,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (date != null && context.mounted) {
+      context.read<MapEventsCubit>().filterByDate(date);
+    }
+  }
+
+  Future<void> _pickStartTime(
+    BuildContext context, {
+    required int? startMinute,
+    required int? endMinute,
+  }) async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: _timeOfDayFromMinute(startMinute) ?? TimeOfDay.now(),
+    );
+
+    if (time != null && context.mounted) {
+      final minute = time.hour * 60 + time.minute;
+      context.read<MapEventsCubit>().filterByTimeRange(
+        startMinute: minute,
+        endMinute: endMinute,
+      );
+    }
+  }
+
+  Future<void> _pickEndTime(
+    BuildContext context, {
+    required int? startMinute,
+    required int? endMinute,
+  }) async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: _timeOfDayFromMinute(endMinute) ?? TimeOfDay.now(),
+    );
+
+    if (time != null && context.mounted) {
+      final minute = time.hour * 60 + time.minute;
+      context.read<MapEventsCubit>().filterByTimeRange(
+        startMinute: startMinute,
+        endMinute: minute,
+      );
+    }
+  }
+
+  TimeOfDay? _timeOfDayFromMinute(int? minute) {
+    if (minute == null) return null;
+    return TimeOfDay(hour: minute ~/ 60, minute: minute % 60);
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month';
+  }
+
+  String _formatMinute(int minute) {
+    final hour = (minute ~/ 60).toString().padLeft(2, '0');
+    final minutes = (minute % 60).toString().padLeft(2, '0');
+    return '$hour:$minutes';
+  }
+}
+
+class _FilterActionChip extends StatelessWidget {
+  const _FilterActionChip({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18),
+      label: Text(label),
+      side: BorderSide(
+        color: selected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.outlineVariant,
+      ),
+      backgroundColor: selected
+          ? Theme.of(context).colorScheme.primaryContainer
+          : Theme.of(context).colorScheme.surface,
+      onPressed: onPressed,
     );
   }
 }

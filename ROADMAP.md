@@ -10,6 +10,10 @@
 - Eventos sem coordenadas continuam acessiveis pela aba Explorar, mas nao aparecem no mapa.
 - Ao tocar em um marcador, o app abre o fluxo de detalhes do evento.
 - A aba Mapa reaproveita os filtros ja existentes por esporte e a regra de visibilidade para eventos "Somente mulheres".
+- Os filtros da aba Mapa foram movidos para um header fixo acima do mapa, sem sobrepor a area interativa.
+- A aba Mapa agora permite filtrar por esporte, data, horario inicial e horario final.
+- Marcadores proximos sao agrupados em uma bolinha numerada; ao tocar, o app mostra uma lista objetiva dos eventos daquela regiao.
+- Pontos de interesse do Google Maps, como restaurantes e lojas, ficam ocultos para reduzir ruido visual e cliques desnecessarios.
 
 **Criacao de eventos com endereco assistido**
 
@@ -18,6 +22,7 @@
 - No Web, a busca usa Google Maps Places API (New), evitando a API legada `AutocompleteService`.
 - No Android/iOS, a busca continua usando o pacote `geocoding` como fallback nativo.
 - O script do Google Maps no Web passou a carregar `libraries=places`, `v=weekly` e `loading=async`.
+- O boot do Web passou a carregar o Flutter somente depois do callback do Google Maps, evitando tela branca por corrida de carregamento.
 
 **Agenda do usuario**
 
@@ -76,7 +81,7 @@ Por que este e o melhor proximo passo:
 
 Ordem sugerida apos essa etapa:
 
-1. Filtros basicos por data no Explorar e Mapa.
+1. Filtros basicos por data tambem na aba Explorar.
 2. Edicao e cancelamento de evento pelo criador.
 3. Compartilhamento de evento por link/texto.
 4. Lista simples de participantes, buscando dados basicos de perfil.
