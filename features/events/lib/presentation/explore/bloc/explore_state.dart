@@ -21,13 +21,15 @@ final class ExploreLoadedState extends ExploreState {
   const ExploreLoadedState({
     required this.events,
     this.selectedSport = SportType.all,
+    this.query = '',
   });
 
   final List<Event> events;
   final SportType selectedSport;
+  final String query;
 
   @override
-  List<Object?> get props => [events, selectedSport];
+  List<Object?> get props => [events, selectedSport, query];
 }
 
 final class ExploreErrorState extends ExploreState {
