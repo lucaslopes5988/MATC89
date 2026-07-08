@@ -117,7 +117,7 @@ class _ExploreViewState extends State<_ExploreView> {
                 ),
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 44,
+                    height: 52,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(
@@ -135,6 +135,9 @@ class _ExploreViewState extends State<_ExploreView> {
                                     state.selectedSport == sport;
                                 return FilterChip(
                                   label: Text(sportTypeLabel(sport)),
+                                  labelPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
                                   selected: selected,
                                   onSelected: (_) {
                                     _searchController.clear();
