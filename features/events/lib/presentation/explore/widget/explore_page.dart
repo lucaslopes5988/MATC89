@@ -49,11 +49,24 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 }
 
-class _ExploreView extends StatelessWidget {
+class _ExploreView extends StatefulWidget {
   const _ExploreView({required this.userId, this.isWoman = false});
 
   final String userId;
   final bool isWoman;
+
+  @override
+  State<_ExploreView> createState() => _ExploreViewState();
+}
+
+class _ExploreViewState extends State<_ExploreView> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   static const _filters = [
     SportType.all,
@@ -81,11 +94,24 @@ class _ExploreView extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(PlayceSpacing.md),
                     child: TextField(
-                      decoration: const InputDecoration(
+                      controller: _searchController,
+                      decoration: InputDecoration(
                         hintText: EventsStrings.searchHint,
-                        prefixIcon: Icon(Icons.search),
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  context.read<ExploreCubit>().search('');
+                                },
+                              )
+                            : null,
                       ),
-                      enabled: false,
+                      onChanged: (query) {
+                        context.read<ExploreCubit>().search(query);
+                        setState(() {});
+                      },
                     ),
                   ),
                 ),
@@ -110,9 +136,12 @@ class _ExploreView extends StatelessWidget {
                                 return FilterChip(
                                   label: Text(sportTypeLabel(sport)),
                                   selected: selected,
-                                  onSelected: (_) => context
-                                      .read<ExploreCubit>()
-                                      .filterBySport(sport),
+                                  onSelected: (_) {
+                                    _searchController.clear();
+                                    context
+                                        .read<ExploreCubit>()
+                                        .filterBySport(sport);
+                                  },
                                 );
                               },
                             ),
@@ -136,12 +165,20 @@ class _ExploreView extends StatelessWidget {
                       icon: Icons.cloud_off_outlined,
                     ),
                   ),
-                  ExploreLoadedState(:final events) when events.isEmpty =>
-                    const SliverFillRemaining(
+                  ExploreLoadedState(:final events, :final query)
+                      when events.isEmpty =>
+                    SliverFillRemaining(
                       hasScrollBody: false,
                       child: PlayceEmptyState(
-                        title: EventsStrings.emptyTitle,
-                        message: EventsStrings.emptyMessage,
+                        title: query.isNotEmpty
+                            ? EventsStrings.searchEmptyTitle
+                            : EventsStrings.emptyTitle,
+                        message: query.isNotEmpty
+                            ? EventsStrings.searchEmptyMessage
+                            : EventsStrings.emptyMessage,
+                        icon: query.isNotEmpty
+                            ? Icons.search_off
+                            : Icons.event_busy_outlined,
                       ),
                     ),
                   ExploreLoadedState(:final events) => SliverPadding(
@@ -153,9 +190,9 @@ class _ExploreView extends StatelessWidget {
                       itemBuilder: (context, index) {
                         return _EventCard(
                           event: events[index],
-                          userId: userId,
+                          userId: widget.userId,
                           selectedSport: state.selectedSport,
-                          isWoman: isWoman,
+                          isWoman: widget.isWoman,
                         );
                       },
                     ),

@@ -7,6 +7,9 @@ abstract final class EventsStrings {
   static const emptyTitle = 'Nenhum evento por aqui';
   static const emptyMessage =
       'Quando houver eventos no Firestore, eles aparecerão aqui.';
+  static const searchEmptyTitle = 'Nenhum resultado';
+  static const searchEmptyMessage =
+      'Nenhum evento encontrado para essa busca.';
   static const womenOnlyBadge = 'Mulheres';
   static const slotsLeft = 'vagas';
   static const full = 'Lotado';
